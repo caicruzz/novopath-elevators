@@ -1,34 +1,45 @@
+using ElevatorSimulator.Api.Models;
+using ElevatorSimulator.Api.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ── Services ──
+builder.Services.AddSingleton<BuildingService>();
+builder.Services.AddHostedService<SimulationBackgroundService>();
+
+// ── CORS (allow React dev server) ──
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy
+            .WithOrigins("http://localhost:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseCors();
 
-app.UseHttpsRedirection();
+// ── Endpoints ──
 
-var summaries = new[]
+app.MapGet("/api/building/state", (BuildingService svc) => Results.Ok(svc.GetState()))
+    .WithName("GetBuildingState");
+
+app.MapPost("/api/elevator/call", (ElevatorCallRequest request, BuildingService svc) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-});
+    try
+    {
+        var elevator = svc.CallElevator(request.Floor);
+        return Results.Ok(elevator);
+    }
+    catch (ArgumentOutOfRangeException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+})
+    .WithName("CallElevator");
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
