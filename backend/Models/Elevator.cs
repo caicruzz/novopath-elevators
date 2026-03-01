@@ -12,11 +12,19 @@ public class Elevator
     public int CurrentFloor { get; set; } = 1;
     public int TargetFloor { get; set; } = 1;
     public ElevatorState State { get; set; } = ElevatorState.Idle;
+    public double WeightLimitKg { get; set; } = 1000.0;
+    public List<Passenger> Passengers { get; } = [];
+    public double CurrentWeightKg => Passengers.Sum(p => p.WeightKg);
 
     /// <summary>
     /// Tracks remaining ticks the doors stay open before transitioning to Idle.
     /// </summary>
     private int _doorsOpenTicksRemaining;
+
+    /// <summary>
+    /// Ordered queue of floors to visit. Dequeued one at a time after each door-close cycle.
+    /// </summary>
+    private readonly Queue<int> _stopQueue = new();
 
     /// <summary>
     /// Advances the elevator by one simulation tick.
@@ -33,7 +41,10 @@ public class Elevator
                 _doorsOpenTicksRemaining--;
                 if (_doorsOpenTicksRemaining <= 0)
                 {
-                    State = ElevatorState.Idle;
+                    if (_stopQueue.Count > 0)
+                        AdvanceToNextStop();
+                    else
+                        State = ElevatorState.Idle;
                 }
                 return;
 
@@ -85,6 +96,34 @@ public class Elevator
             State = CurrentFloor < TargetFloor
                 ? ElevatorState.MovingUp
                 : ElevatorState.MovingDown;
+        }
+    }
+
+    /// <summary>
+    /// Appends a floor to the stop queue. If the elevator is idle, starts moving immediately.
+    /// </summary>
+    public void EnqueueStop(int floor)
+    {
+        _stopQueue.Enqueue(floor);
+        if (State == ElevatorState.Idle)
+            AdvanceToNextStop();
+    }
+
+    private void AdvanceToNextStop()
+    {
+        if (_stopQueue.TryDequeue(out var next))
+        {
+            TargetFloor = next;
+            if (CurrentFloor == TargetFloor)
+            {
+                // Already on this floor — open doors immediately
+                State = ElevatorState.DoorsOpen;
+                _doorsOpenTicksRemaining = DoorsOpenDurationTicks;
+            }
+            else
+            {
+                AssignTarget(next);
+            }
         }
     }
 }

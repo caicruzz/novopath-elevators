@@ -8,20 +8,25 @@ namespace ElevatorSimulator.Api.Services;
 /// </summary>
 public class BuildingService
 {
-    private readonly BuildingState _state;
+    private BuildingState _state;
     private readonly Lock _lock = new();
+    private readonly IElevatorDispatchStrategy _dispatchStrategy;
 
-    public BuildingService()
+    public BuildingService(IElevatorDispatchStrategy dispatchStrategy)
     {
-        _state = new BuildingState
+        _dispatchStrategy = dispatchStrategy;
+        _state = CreateInitialState(10, 3, 1000.0);
+    }
+
+    private static BuildingState CreateInitialState(int floors, int elevatorCount, double weightLimitKg)
+    {
+        return new BuildingState
         {
-            NumberOfFloors = 10,
-            Elevators =
-            [
-                new Elevator { Id = 1, CurrentFloor = 1 },
-                new Elevator { Id = 2, CurrentFloor = 5 },
-                new Elevator { Id = 3, CurrentFloor = 10 }
-            ]
+            NumberOfFloors = floors,
+            WeightLimitKg = weightLimitKg,
+            Elevators = Enumerable.Range(1, elevatorCount)
+                .Select(id => new Elevator { Id = id, CurrentFloor = 1, WeightLimitKg = weightLimitKg })
+                .ToList()
         };
     }
 
@@ -33,40 +38,79 @@ public class BuildingService
         lock (_lock)
         {
             var elevatorDtos = _state.Elevators
-                .Select(e => new ElevatorDto(e.Id, e.CurrentFloor, e.TargetFloor, e.State.ToString()))
+                .Select(e => new ElevatorDto(
+                    e.Id,
+                    e.CurrentFloor,
+                    e.TargetFloor,
+                    e.State.ToString(),
+                    e.CurrentWeightKg,
+                    e.WeightLimitKg))
                 .ToList();
 
-            return new BuildingStateDto(_state.NumberOfFloors, elevatorDtos);
+            return new BuildingStateDto(_state.NumberOfFloors, _state.WeightLimitKg, elevatorDtos);
         }
     }
 
     /// <summary>
-    /// Dispatches the nearest idle elevator to the requested floor.
-    /// If no elevators are idle, the closest elevator is reassigned.
+    /// Dispatches an elevator to the pickup floor, then routes it to the destination.
     /// </summary>
-    public ElevatorDto CallElevator(int floor)
+    public ElevatorDto CallElevator(ElevatorCallRequest request)
     {
         lock (_lock)
         {
-            if (floor < 1 || floor > _state.NumberOfFloors)
-                throw new ArgumentOutOfRangeException(nameof(floor),
-                    $"Floor must be between 1 and {_state.NumberOfFloors}.");
+            if (request.Floor < 1 || request.Floor > _state.NumberOfFloors)
+                throw new ArgumentOutOfRangeException(nameof(request.Floor),
+                    $"Pickup floor must be between 1 and {_state.NumberOfFloors}.");
 
-            // Prefer idle elevators, closest first
-            var elevator = _state.Elevators
-                .Where(e => e.State == ElevatorState.Idle)
-                .OrderBy(e => Math.Abs(e.CurrentFloor - floor))
-                .FirstOrDefault();
+            if (request.DestinationFloor < 1 || request.DestinationFloor > _state.NumberOfFloors)
+                throw new ArgumentOutOfRangeException(nameof(request.DestinationFloor),
+                    $"Destination floor must be between 1 and {_state.NumberOfFloors}.");
 
-            // Fallback: pick the closest elevator regardless of state (excluding Maintenance)
-            elevator ??= _state.Elevators
-                .Where(e => e.State != ElevatorState.Maintenance)
-                .OrderBy(e => Math.Abs(e.CurrentFloor - floor))
-                .First();
+            if (request.Floor == request.DestinationFloor)
+                throw new ArgumentException("Pickup and destination floors must differ.");
 
-            elevator.AssignTarget(floor);
+            if (request.WeightKg <= 0)
+                throw new ArgumentOutOfRangeException(nameof(request.WeightKg),
+                    "Passenger weight must be positive.");
 
-            return new ElevatorDto(elevator.Id, elevator.CurrentFloor, elevator.TargetFloor, elevator.State.ToString());
+            var elevator = _dispatchStrategy.SelectElevator(_state.Elevators, request.Floor)
+                ?? throw new InvalidOperationException("No elevators are available.");
+
+            elevator.Passengers.Add(new Passenger(request.DestinationFloor, request.WeightKg));
+            elevator.EnqueueStop(request.Floor);
+            elevator.EnqueueStop(request.DestinationFloor);
+
+            return new ElevatorDto(
+                elevator.Id,
+                elevator.CurrentFloor,
+                elevator.TargetFloor,
+                elevator.State.ToString(),
+                elevator.CurrentWeightKg,
+                elevator.WeightLimitKg);
+        }
+    }
+
+    /// <summary>
+    /// Reconfigures the building, resetting all elevators.
+    /// </summary>
+    public void ConfigureBuilding(ConfigureRequest req)
+    {
+        if (req.NumberOfFloors < 2)
+            throw new ArgumentOutOfRangeException(nameof(req.NumberOfFloors),
+                "Building must have at least 2 floors.");
+        if (req.NumberOfElevators < 1)
+            throw new ArgumentOutOfRangeException(nameof(req.NumberOfElevators),
+                "Building must have at least 1 elevator.");
+        if (req.NumberOfElevators > 20)
+            throw new ArgumentOutOfRangeException(nameof(req.NumberOfElevators),
+                "Maximum 20 elevators supported.");
+        if (req.WeightLimitKg <= 0)
+            throw new ArgumentOutOfRangeException(nameof(req.WeightLimitKg),
+                "Weight limit must be positive.");
+
+        lock (_lock)
+        {
+            _state = CreateInitialState(req.NumberOfFloors, req.NumberOfElevators, req.WeightLimitKg);
         }
     }
 

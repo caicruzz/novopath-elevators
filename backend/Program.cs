@@ -4,6 +4,7 @@ using ElevatorSimulator.Api.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Services ──
+builder.Services.AddSingleton<IElevatorDispatchStrategy, NearestCarStrategy>();
 builder.Services.AddSingleton<BuildingService>();
 builder.Services.AddHostedService<SimulationBackgroundService>();
 
@@ -32,14 +33,36 @@ app.MapPost("/api/elevator/call", (ElevatorCallRequest request, BuildingService 
 {
     try
     {
-        var elevator = svc.CallElevator(request.Floor);
+        var elevator = svc.CallElevator(request);
         return Results.Ok(elevator);
     }
     catch (ArgumentOutOfRangeException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
     }
+    catch (ArgumentException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.UnprocessableEntity(new { error = ex.Message });
+    }
 })
     .WithName("CallElevator");
+
+app.MapPost("/api/building/configure", (ConfigureRequest request, BuildingService svc) =>
+{
+    try
+    {
+        svc.ConfigureBuilding(request);
+        return Results.Ok(svc.GetState());
+    }
+    catch (ArgumentOutOfRangeException ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+})
+    .WithName("ConfigureBuilding");
 
 app.Run();

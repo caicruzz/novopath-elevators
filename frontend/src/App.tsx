@@ -1,6 +1,7 @@
 import { useBuildingState } from './hooks/useBuildingState';
 import { ElevatorCar } from './components/ElevatorCar';
 import { FloorCallPanel } from './components/FloorCallPanel';
+import { ConfigurationForm } from './components/ConfigurationForm';
 import './App.css';
 
 function App() {
@@ -37,6 +38,15 @@ function App() {
 
         {buildingState && (
           <div className="simulation-layout">
+            {/* Configuration Panel */}
+            <ConfigurationForm
+              currentConfig={{
+                numberOfFloors: buildingState.numberOfFloors,
+                numberOfElevators: buildingState.elevators.length,
+                weightLimitKg: buildingState.weightLimitKg,
+              }}
+            />
+
             {/* Elevator Shafts */}
             <div className="shafts-container">
               <div className="shafts-panel">
