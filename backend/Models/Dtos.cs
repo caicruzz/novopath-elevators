@@ -3,9 +3,16 @@ namespace ElevatorSimulator.Api.Models;
 // ── Domain Models ──
 
 /// <summary>
-/// Represents a single passenger with a destination and weight.
+/// Represents a single passenger with a destination, weight, and trip timing data.
 /// </summary>
-public record Passenger(int DestinationFloor, double WeightKg);
+public class Passenger
+{
+    public int PickupFloor { get; init; }
+    public int DestinationFloor { get; init; }
+    public double WeightKg { get; init; }
+    public DateTime RequestedAt { get; init; }
+    public DateTime? PickedUpAt { get; set; }
+}
 
 /// <summary>
 /// A safety or compliance event logged during the simulation.
@@ -38,3 +45,28 @@ public record ElevatorDto(int Id, int CurrentFloor, int TargetFloor, string Stat
 /// </summary>
 public record BuildingStateDto(int NumberOfFloors, double WeightLimitKg,
     List<ElevatorDto> Elevators, bool IsEmergencyMode, List<ComplianceEvent> ComplianceLog);
+
+/// <summary>
+/// Per-elevator performance statistics.
+/// </summary>
+public record ElevatorStatsDto(
+    int ElevatorId,
+    int TripsCompleted,
+    int FloorsTraversed,
+    double AvgWaitTimeSeconds,
+    double MaxWaitTimeSeconds);
+
+/// <summary>
+/// Full simulation metrics report.
+/// </summary>
+public record SimulationReportDto(
+    int TotalTrips,
+    int TotalPassengersServed,
+    double AvgWaitTimeSeconds,
+    double MaxWaitTimeSeconds,
+    double AvgTravelTimeSeconds,
+    int TotalFloorsTraversed,
+    int ComplianceEventCount,
+    List<ElevatorStatsDto> ElevatorStats,
+    List<ComplianceEvent> ComplianceLog,
+    DateTime GeneratedAt);

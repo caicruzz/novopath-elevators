@@ -19,6 +19,16 @@ public class Elevator
     public bool IsInEmergencyDescent { get; set; }
 
     /// <summary>
+    /// Total floors this elevator has traveled since creation/reset. Used for metrics.
+    /// </summary>
+    public int TotalFloorsTraversed { get; private set; }
+
+    /// <summary>
+    /// Completed trips collected after disembark. Drained by BuildingService on each tick.
+    /// </summary>
+    public List<TripRecord> RecentlyCompletedTrips { get; } = [];
+
+    /// <summary>
     /// Tracks remaining ticks the doors stay open before transitioning to Idle.
     /// </summary>
     private int _doorsOpenTicksRemaining;
@@ -55,6 +65,8 @@ public class Elevator
                 _doorsOpenTicksRemaining--;
                 if (_doorsOpenTicksRemaining <= 0)
                 {
+                    // Mark passengers as picked up at this floor
+                    MarkPassengersPickedUp();
                     // Passengers exit at this floor
                     DisembarkPassengers();
 
@@ -94,10 +106,12 @@ public class Elevator
         if (CurrentFloor < TargetFloor)
         {
             CurrentFloor++;
+            TotalFloorsTraversed++;
         }
         else if (CurrentFloor > TargetFloor)
         {
             CurrentFloor--;
+            TotalFloorsTraversed++;
         }
 
         // Check if we've arrived
@@ -197,10 +211,42 @@ public class Elevator
     }
 
     /// <summary>
+    /// Marks passengers whose pickup floor matches the current floor as "picked up".
+    /// </summary>
+    private void MarkPassengersPickedUp()
+    {
+        var now = DateTime.UtcNow;
+        foreach (var p in Passengers)
+        {
+            if (p.PickupFloor == CurrentFloor && p.PickedUpAt is null)
+            {
+                p.PickedUpAt = now;
+            }
+        }
+    }
+
+    /// <summary>
     /// Removes passengers whose destination is the current floor.
+    /// Creates TripRecords for successfully delivered passengers.
     /// </summary>
     private void DisembarkPassengers()
     {
+        var now = DateTime.UtcNow;
+        var delivered = Passengers
+            .Where(p => p.DestinationFloor == CurrentFloor)
+            .ToList();
+
+        foreach (var p in delivered)
+        {
+            RecentlyCompletedTrips.Add(new TripRecord(
+                Id,
+                p.PickupFloor,
+                p.DestinationFloor,
+                p.RequestedAt,
+                p.PickedUpAt ?? now,  // fallback if never explicitly picked up
+                now));
+        }
+
         Passengers.RemoveAll(p => p.DestinationFloor == CurrentFloor);
     }
 }

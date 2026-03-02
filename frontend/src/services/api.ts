@@ -1,4 +1,4 @@
-import type { BuildingStateDto, ElevatorDto, ConfigureRequest } from '../types/elevator';
+import type { BuildingStateDto, ElevatorDto, ConfigureRequest, SimulationReportDto } from '../types/elevator';
 
 const API_BASE = 'http://localhost:5014';
 
@@ -45,5 +45,11 @@ export async function deactivateEmergency(): Promise<BuildingStateDto> {
         method: 'POST',
     });
     if (!res.ok) throw new Error(`Failed to deactivate emergency: ${res.statusText}`);
+    return res.json();
+}
+
+export async function fetchReport(): Promise<SimulationReportDto> {
+    const res = await fetch(`${API_BASE}/api/simulation/report`);
+    if (!res.ok) throw new Error(`Failed to fetch report: ${res.statusText}`);
     return res.json();
 }

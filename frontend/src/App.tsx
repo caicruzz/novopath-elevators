@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { useBuildingState } from './hooks/useBuildingState';
 import { ElevatorCar } from './components/ElevatorCar';
 import { FloorCallPanel } from './components/FloorCallPanel';
 import { ConfigurationForm } from './components/ConfigurationForm';
 import { EmergencyPanel } from './components/EmergencyPanel';
+import { SimulationReport } from './components/SimulationReport';
 import './App.css';
 
 function App() {
   const { buildingState, error } = useBuildingState();
+  const [showReport, setShowReport] = useState(false);
 
   return (
     <div className="app">
@@ -48,7 +51,7 @@ function App() {
 
         {buildingState && (
           <div className="simulation-layout">
-            {/* Left side: Config + Emergency */}
+            {/* Left side: Config + Emergency + Report */}
             <div className="left-panel">
               <ConfigurationForm
                 currentConfig={{
@@ -58,6 +61,12 @@ function App() {
                 }}
               />
               <EmergencyPanel isEmergencyMode={buildingState.isEmergencyMode} />
+              <button
+                className="view-report-btn"
+                onClick={() => setShowReport(true)}
+              >
+                📊 View Report
+              </button>
             </div>
 
             {/* Elevator Shafts */}
@@ -113,6 +122,9 @@ function App() {
           </div>
         )}
       </main>
+
+      {/* Report Overlay */}
+      {showReport && <SimulationReport onClose={() => setShowReport(false)} />}
     </div>
   );
 }

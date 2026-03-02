@@ -38,3 +38,26 @@ export interface ConfigureRequest {
     numberOfElevators: number;
     weightLimitKg: number;
 }
+
+// ── Report Types ──
+
+export interface ElevatorStatsDto {
+    elevatorId: number;
+    tripsCompleted: number;
+    floorsTraversed: number;
+    avgWaitTimeSeconds: number;
+    maxWaitTimeSeconds: number;
+}
+
+export interface SimulationReportDto {
+    totalTrips: number;
+    totalPassengersServed: number;
+    avgWaitTimeSeconds: number;
+    maxWaitTimeSeconds: number;
+    avgTravelTimeSeconds: number;
+    totalFloorsTraversed: number;
+    complianceEventCount: number;
+    elevatorStats: ElevatorStatsDto[];
+    complianceLog: ComplianceEvent[];
+    generatedAt: string;
+}

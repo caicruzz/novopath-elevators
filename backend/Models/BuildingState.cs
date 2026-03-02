@@ -10,4 +10,5 @@ public class BuildingState
     public List<Elevator> Elevators { get; set; } = [];
     public bool IsEmergencyMode { get; set; }
     public List<ComplianceEvent> ComplianceLog { get; set; } = [];
+    public List<TripRecord> CompletedTrips { get; set; } = [];
 }

@@ -79,4 +79,7 @@ app.MapPost("/api/building/emergency/deactivate", (BuildingService svc) =>
 })
     .WithName("DeactivateEmergency");
 
+app.MapGet("/api/simulation/report", (BuildingService svc) => Results.Ok(svc.GetReport()))
+    .WithName("GetSimulationReport");
+
 app.Run();

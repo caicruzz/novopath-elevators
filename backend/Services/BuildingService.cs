@@ -69,7 +69,13 @@ public class BuildingService
             var elevator = _dispatchStrategy.SelectElevator(_state.Elevators, request.Floor)
                 ?? throw new InvalidOperationException("No elevators are available.");
 
-            elevator.Passengers.Add(new Passenger(request.DestinationFloor, request.WeightKg));
+            elevator.Passengers.Add(new Passenger
+            {
+                PickupFloor = request.Floor,
+                DestinationFloor = request.DestinationFloor,
+                WeightKg = request.WeightKg,
+                RequestedAt = DateTime.UtcNow
+            });
             elevator.EnqueueStop(request.Floor);
             elevator.EnqueueStop(request.DestinationFloor);
 
@@ -163,6 +169,13 @@ public class BuildingService
                 var prevState = elevator.State;
                 elevator.Tick();
 
+                // Collect completed trips from this elevator
+                if (elevator.RecentlyCompletedTrips.Count > 0)
+                {
+                    _state.CompletedTrips.AddRange(elevator.RecentlyCompletedTrips);
+                    elevator.RecentlyCompletedTrips.Clear();
+                }
+
                 // Log compliance event on state transition to CapacityExceeded
                 if (elevator.State == ElevatorState.CapacityExceeded
                     && prevState != ElevatorState.CapacityExceeded)
@@ -174,6 +187,51 @@ public class BuildingService
                         $"at floor {elevator.CurrentFloor}."));
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Generates an aggregated simulation report from all completed trips.
+    /// </summary>
+    public SimulationReportDto GetReport()
+    {
+        lock (_lock)
+        {
+            var trips = _state.CompletedTrips;
+            var totalTrips = trips.Count;
+
+            double avgWait = 0, maxWait = 0, avgTravel = 0;
+            if (totalTrips > 0)
+            {
+                avgWait = trips.Average(t => t.WaitTime.TotalSeconds);
+                maxWait = trips.Max(t => t.WaitTime.TotalSeconds);
+                avgTravel = trips.Average(t => t.TravelTime.TotalSeconds);
+            }
+
+            var totalFloors = _state.Elevators.Sum(e => e.TotalFloorsTraversed);
+
+            var elevatorStats = _state.Elevators.Select(e =>
+            {
+                var elevatorTrips = trips.Where(t => t.ElevatorId == e.Id).ToList();
+                return new ElevatorStatsDto(
+                    e.Id,
+                    elevatorTrips.Count,
+                    e.TotalFloorsTraversed,
+                    elevatorTrips.Count > 0 ? elevatorTrips.Average(t => t.WaitTime.TotalSeconds) : 0,
+                    elevatorTrips.Count > 0 ? elevatorTrips.Max(t => t.WaitTime.TotalSeconds) : 0);
+            }).ToList();
+
+            return new SimulationReportDto(
+                totalTrips,
+                totalTrips, // Each trip = 1 passenger served
+                Math.Round(avgWait, 1),
+                Math.Round(maxWait, 1),
+                Math.Round(avgTravel, 1),
+                totalFloors,
+                _state.ComplianceLog.Count,
+                elevatorStats,
+                _state.ComplianceLog.ToList(),
+                DateTime.UtcNow);
         }
     }
 
