@@ -37,17 +37,7 @@ public class BuildingService
     {
         lock (_lock)
         {
-            var elevatorDtos = _state.Elevators
-                .Select(e => new ElevatorDto(
-                    e.Id,
-                    e.CurrentFloor,
-                    e.TargetFloor,
-                    e.State.ToString(),
-                    e.CurrentWeightKg,
-                    e.WeightLimitKg))
-                .ToList();
-
-            return new BuildingStateDto(_state.NumberOfFloors, _state.WeightLimitKg, elevatorDtos);
+            return GetStateUnsafe();
         }
     }
 
@@ -58,6 +48,9 @@ public class BuildingService
     {
         lock (_lock)
         {
+            if (_state.IsEmergencyMode)
+                throw new InvalidOperationException("Emergency mode active. All elevator calls are suspended.");
+
             if (request.Floor < 1 || request.Floor > _state.NumberOfFloors)
                 throw new ArgumentOutOfRangeException(nameof(request.Floor),
                     $"Pickup floor must be between 1 and {_state.NumberOfFloors}.");
@@ -86,7 +79,8 @@ public class BuildingService
                 elevator.TargetFloor,
                 elevator.State.ToString(),
                 elevator.CurrentWeightKg,
-                elevator.WeightLimitKg);
+                elevator.WeightLimitKg,
+                elevator.Passengers.Count);
         }
     }
 
@@ -115,6 +109,48 @@ public class BuildingService
     }
 
     /// <summary>
+    /// Activates emergency fire mode. All elevators descend to ground floor.
+    /// </summary>
+    public BuildingStateDto ActivateEmergencyMode()
+    {
+        lock (_lock)
+        {
+            if (_state.IsEmergencyMode) return GetStateUnsafe();
+
+            _state.IsEmergencyMode = true;
+            _state.ComplianceLog.Add(new ComplianceEvent(
+                DateTime.UtcNow, 0, "EmergencyActivated",
+                "Fire mode activated. All elevators returning to ground floor."));
+
+            foreach (var elevator in _state.Elevators)
+                elevator.ForceEmergencyDescent();
+
+            return GetStateUnsafe();
+        }
+    }
+
+    /// <summary>
+    /// Deactivates emergency fire mode. All elevators reset to idle at ground floor.
+    /// </summary>
+    public BuildingStateDto DeactivateEmergencyMode()
+    {
+        lock (_lock)
+        {
+            if (!_state.IsEmergencyMode) return GetStateUnsafe();
+
+            _state.IsEmergencyMode = false;
+            _state.ComplianceLog.Add(new ComplianceEvent(
+                DateTime.UtcNow, 0, "EmergencyDeactivated",
+                "Fire mode deactivated. Normal operation resumed."));
+
+            foreach (var elevator in _state.Elevators)
+                elevator.ResetFromEmergency();
+
+            return GetStateUnsafe();
+        }
+    }
+
+    /// <summary>
     /// Advances all elevators by one simulation tick.
     /// Called by the background service on a timer.
     /// </summary>
@@ -124,8 +160,44 @@ public class BuildingService
         {
             foreach (var elevator in _state.Elevators)
             {
+                var prevState = elevator.State;
                 elevator.Tick();
+
+                // Log compliance event on state transition to CapacityExceeded
+                if (elevator.State == ElevatorState.CapacityExceeded
+                    && prevState != ElevatorState.CapacityExceeded)
+                {
+                    _state.ComplianceLog.Add(new ComplianceEvent(
+                        DateTime.UtcNow, elevator.Id, "CapacityExceeded",
+                        $"Car {elevator.Id} exceeded weight limit " +
+                        $"({elevator.CurrentWeightKg:F1}kg / {elevator.WeightLimitKg:F1}kg) " +
+                        $"at floor {elevator.CurrentFloor}."));
+                }
             }
         }
+    }
+
+    /// <summary>
+    /// Builds a state snapshot without acquiring the lock. Caller must hold the lock.
+    /// </summary>
+    private BuildingStateDto GetStateUnsafe()
+    {
+        var elevatorDtos = _state.Elevators
+            .Select(e => new ElevatorDto(
+                e.Id,
+                e.CurrentFloor,
+                e.TargetFloor,
+                e.State.ToString(),
+                e.CurrentWeightKg,
+                e.WeightLimitKg,
+                e.Passengers.Count))
+            .ToList();
+
+        return new BuildingStateDto(
+            _state.NumberOfFloors,
+            _state.WeightLimitKg,
+            elevatorDtos,
+            _state.IsEmergencyMode,
+            _state.ComplianceLog.ToList());
     }
 }

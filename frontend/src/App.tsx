@@ -2,6 +2,7 @@ import { useBuildingState } from './hooks/useBuildingState';
 import { ElevatorCar } from './components/ElevatorCar';
 import { FloorCallPanel } from './components/FloorCallPanel';
 import { ConfigurationForm } from './components/ConfigurationForm';
+import { EmergencyPanel } from './components/EmergencyPanel';
 import './App.css';
 
 function App() {
@@ -9,6 +10,15 @@ function App() {
 
   return (
     <div className="app">
+      {/* Emergency Banner */}
+      {buildingState?.isEmergencyMode && (
+        <div className="emergency-banner">
+          <span className="emergency-banner-icon">🔥</span>
+          FIRE EMERGENCY — ALL ELEVATORS RETURNING TO GROUND FLOOR
+          <span className="emergency-banner-icon">🔥</span>
+        </div>
+      )}
+
       {/* Header */}
       <header className="app-header">
         <div className="header-glow" />
@@ -38,21 +48,24 @@ function App() {
 
         {buildingState && (
           <div className="simulation-layout">
-            {/* Configuration Panel */}
-            <ConfigurationForm
-              currentConfig={{
-                numberOfFloors: buildingState.numberOfFloors,
-                numberOfElevators: buildingState.elevators.length,
-                weightLimitKg: buildingState.weightLimitKg,
-              }}
-            />
+            {/* Left side: Config + Emergency */}
+            <div className="left-panel">
+              <ConfigurationForm
+                currentConfig={{
+                  numberOfFloors: buildingState.numberOfFloors,
+                  numberOfElevators: buildingState.elevators.length,
+                  weightLimitKg: buildingState.weightLimitKg,
+                }}
+              />
+              <EmergencyPanel isEmergencyMode={buildingState.isEmergencyMode} />
+            </div>
 
             {/* Elevator Shafts */}
             <div className="shafts-container">
               <div className="shafts-panel">
                 <div className="shafts-header">
-                  <span className="live-dot" />
-                  <span>LIVE</span>
+                  <span className={`live-dot${buildingState.isEmergencyMode ? ' emergency' : ''}`} />
+                  <span>{buildingState.isEmergencyMode ? 'EMERGENCY' : 'LIVE'}</span>
                 </div>
                 <div className="shafts-grid">
                   {buildingState.elevators.map((elevator) => (
@@ -68,6 +81,35 @@ function App() {
 
             {/* Call Panel */}
             <FloorCallPanel numberOfFloors={buildingState.numberOfFloors} />
+          </div>
+        )}
+
+        {/* Compliance Log */}
+        {buildingState && buildingState.complianceLog.length > 0 && (
+          <div className="compliance-section">
+            <h3 className="compliance-title">📋 Compliance Log</h3>
+            <div className="compliance-table-container">
+              <table className="compliance-table">
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Car</th>
+                    <th>Event</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {buildingState.complianceLog.slice().reverse().map((event, i) => (
+                    <tr key={i} className={`event-${event.eventType.toLowerCase()}`}>
+                      <td>{new Date(event.timestamp).toLocaleTimeString()}</td>
+                      <td>{event.elevatorId === 0 ? 'System' : `Car ${event.elevatorId}`}</td>
+                      <td><span className="event-badge">{event.eventType}</span></td>
+                      <td>{event.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>

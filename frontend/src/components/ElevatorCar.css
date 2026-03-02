@@ -20,11 +20,9 @@
   position: relative;
   width: 64px;
   height: 420px;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.03) 0%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
+  background: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.03) 0%,
+      rgba(255, 255, 255, 0.06) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 12px;
   overflow: visible;
@@ -130,6 +128,72 @@
     0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
+.elevator-car.state-capacityexceeded,
+.elevator-car.state-capacity-exceeded {
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  box-shadow:
+    0 0 24px rgba(239, 68, 68, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: pulse-red 0.8s ease-in-out infinite;
+}
+
+.elevator-car.state-emergencystop,
+.elevator-car.state-emergency-stop {
+  background: linear-gradient(135deg, #f97316, #c2410c);
+  box-shadow:
+    0 0 24px rgba(249, 115, 22, 0.6),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+  animation: pulse-orange 1.2s ease-in-out infinite;
+}
+
+/* ── Weight Capacity Bar ── */
+
+.weight-bar-container {
+  width: 64px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.weight-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+.weight-bar.weight-normal {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.weight-bar.weight-warning {
+  background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.weight-bar.weight-danger {
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
+  animation: bar-pulse 0.8s ease-in-out infinite;
+}
+
+/* ── Shaft Info ── */
+
+.shaft-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.passenger-count {
+  font-variant-numeric: tabular-nums;
+}
+
+.weight-label {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
 /* ── Status Label ── */
 
 .shaft-status {
@@ -161,6 +225,20 @@
   border-color: rgba(74, 222, 128, 0.2);
 }
 
+.shaft-status.state-capacityexceeded,
+.shaft-status.state-capacity-exceeded {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+  font-weight: 700;
+}
+
+.shaft-status.state-emergencystop,
+.shaft-status.state-emergency-stop {
+  color: #fb923c;
+  border-color: rgba(251, 146, 60, 0.3);
+  font-weight: 700;
+}
+
 .target-indicator {
   opacity: 0.6;
 }
@@ -168,16 +246,71 @@
 /* ── Animations ── */
 
 @keyframes pulse-cyan {
-  0%, 100% { box-shadow: 0 0 16px rgba(6, 182, 212, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3); }
-  50% { box-shadow: 0 0 28px rgba(6, 182, 212, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(6, 182, 212, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 28px rgba(6, 182, 212, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
 }
 
 @keyframes pulse-purple {
-  0%, 100% { box-shadow: 0 0 16px rgba(139, 92, 246, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3); }
-  50% { box-shadow: 0 0 28px rgba(139, 92, 246, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes pulse-red {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 36px rgba(239, 68, 68, 0.8), 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@keyframes pulse-orange {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(249, 115, 22, 0.4), 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 36px rgba(249, 115, 22, 0.7), 0 4px 16px rgba(0, 0, 0, 0.4);
+  }
 }
 
 @keyframes doors-open {
-  from { transform: translate(-50%, 50%) scaleX(1); }
-  to { transform: translate(-50%, 50%) scaleX(1.15); }
+  from {
+    transform: translate(-50%, 50%) scaleX(1);
+  }
+
+  to {
+    transform: translate(-50%, 50%) scaleX(1.15);
+  }
+}
+
+@keyframes bar-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
 }

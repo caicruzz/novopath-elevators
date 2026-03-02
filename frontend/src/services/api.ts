@@ -31,3 +31,19 @@ export async function configureBuilding(req: ConfigureRequest): Promise<Building
     if (!res.ok) throw new Error(`Failed to configure building: ${res.statusText}`);
     return res.json();
 }
+
+export async function activateEmergency(): Promise<BuildingStateDto> {
+    const res = await fetch(`${API_BASE}/api/building/emergency/activate`, {
+        method: 'POST',
+    });
+    if (!res.ok) throw new Error(`Failed to activate emergency: ${res.statusText}`);
+    return res.json();
+}
+
+export async function deactivateEmergency(): Promise<BuildingStateDto> {
+    const res = await fetch(`${API_BASE}/api/building/emergency/deactivate`, {
+        method: 'POST',
+    });
+    if (!res.ok) throw new Error(`Failed to deactivate emergency: ${res.statusText}`);
+    return res.json();
+}

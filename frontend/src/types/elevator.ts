@@ -1,6 +1,6 @@
 // ── Elevator Types (mirrors backend DTOs) ──
 
-export type ElevatorState = 'Idle' | 'MovingUp' | 'MovingDown' | 'DoorsOpen' | 'Maintenance';
+export type ElevatorState = 'Idle' | 'MovingUp' | 'MovingDown' | 'DoorsOpen' | 'Maintenance' | 'CapacityExceeded' | 'EmergencyStop';
 
 export interface ElevatorDto {
     id: number;
@@ -9,12 +9,22 @@ export interface ElevatorDto {
     state: ElevatorState;
     currentWeightKg: number;
     weightLimitKg: number;
+    passengerCount: number;
+}
+
+export interface ComplianceEvent {
+    timestamp: string;
+    elevatorId: number;
+    eventType: string;
+    description: string;
 }
 
 export interface BuildingStateDto {
     numberOfFloors: number;
     weightLimitKg: number;
     elevators: ElevatorDto[];
+    isEmergencyMode: boolean;
+    complianceLog: ComplianceEvent[];
 }
 
 export interface ElevatorCallRequest {

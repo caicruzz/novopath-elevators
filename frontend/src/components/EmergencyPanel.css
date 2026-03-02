@@ -1,0 +1,105 @@
+/* ── Emergency Panel ── */
+
+.emergency-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem;
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+}
+
+.emergency-panel.active {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.08);
+    animation: emergency-pulse 2s ease-in-out infinite;
+}
+
+.emergency-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.emergency-header h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0;
+}
+
+.emergency-icon {
+    font-size: 1.2rem;
+}
+
+.emergency-status {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 0 1rem 0;
+    line-height: 1.4;
+}
+
+.emergency-panel.active .emergency-status {
+    color: #fca5a5;
+    font-weight: 600;
+}
+
+/* ── Buttons ── */
+
+.emergency-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.emergency-btn.activate {
+    background: linear-gradient(135deg, #dc2626, #991b1b);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.emergency-btn.activate:hover:not(:disabled) {
+    box-shadow: 0 0 30px rgba(220, 38, 38, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+.emergency-btn.deactivate {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(22, 163, 74, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.emergency-btn.deactivate:hover:not(:disabled) {
+    box-shadow: 0 0 30px rgba(22, 163, 74, 0.5), 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: translateY(-1px);
+}
+
+.emergency-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ── Animations ── */
+
+@keyframes emergency-pulse {
+
+    0%,
+    100% {
+        border-color: rgba(239, 68, 68, 0.5);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.1);
+    }
+
+    50% {
+        border-color: rgba(239, 68, 68, 0.8);
+        box-shadow: 0 0 30px rgba(239, 68, 68, 0.2);
+    }
+}

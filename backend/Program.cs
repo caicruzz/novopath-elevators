@@ -65,4 +65,18 @@ app.MapPost("/api/building/configure", (ConfigureRequest request, BuildingServic
 })
     .WithName("ConfigureBuilding");
 
+app.MapPost("/api/building/emergency/activate", (BuildingService svc) =>
+{
+    var state = svc.ActivateEmergencyMode();
+    return Results.Ok(state);
+})
+    .WithName("ActivateEmergency");
+
+app.MapPost("/api/building/emergency/deactivate", (BuildingService svc) =>
+{
+    var state = svc.DeactivateEmergencyMode();
+    return Results.Ok(state);
+})
+    .WithName("DeactivateEmergency");
+
 app.Run();

@@ -7,6 +7,11 @@ namespace ElevatorSimulator.Api.Models;
 /// </summary>
 public record Passenger(int DestinationFloor, double WeightKg);
 
+/// <summary>
+/// A safety or compliance event logged during the simulation.
+/// </summary>
+public record ComplianceEvent(DateTime Timestamp, int ElevatorId, string EventType, string Description);
+
 // ── Request DTOs ──
 
 /// <summary>
@@ -25,9 +30,11 @@ public record ConfigureRequest(int NumberOfFloors, int NumberOfElevators, double
 /// <summary>
 /// Snapshot of a single elevator's state for the API response.
 /// </summary>
-public record ElevatorDto(int Id, int CurrentFloor, int TargetFloor, string State, double CurrentWeightKg, double WeightLimitKg);
+public record ElevatorDto(int Id, int CurrentFloor, int TargetFloor, string State,
+    double CurrentWeightKg, double WeightLimitKg, int PassengerCount);
 
 /// <summary>
 /// Snapshot of the entire building state for the API response.
 /// </summary>
-public record BuildingStateDto(int NumberOfFloors, double WeightLimitKg, List<ElevatorDto> Elevators);
+public record BuildingStateDto(int NumberOfFloors, double WeightLimitKg,
+    List<ElevatorDto> Elevators, bool IsEmergencyMode, List<ComplianceEvent> ComplianceLog);

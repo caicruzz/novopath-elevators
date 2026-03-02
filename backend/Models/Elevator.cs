@@ -15,6 +15,8 @@ public class Elevator
     public double WeightLimitKg { get; set; } = 1000.0;
     public List<Passenger> Passengers { get; } = [];
     public double CurrentWeightKg => Passengers.Sum(p => p.WeightKg);
+    public bool IsOverweight => CurrentWeightKg > WeightLimitKg;
+    public bool IsInEmergencyDescent { get; set; }
 
     /// <summary>
     /// Tracks remaining ticks the doors stay open before transitioning to Idle.
@@ -35,12 +37,34 @@ public class Elevator
         switch (State)
         {
             case ElevatorState.Maintenance:
+            case ElevatorState.EmergencyStop:
                 return; // Elevator is out of service
+
+            case ElevatorState.CapacityExceeded:
+                // Attempt to offload passengers at current floor
+                DisembarkPassengers();
+                if (!IsOverweight)
+                {
+                    // Weight is now within limits — resume normal operation
+                    State = ElevatorState.DoorsOpen;
+                    _doorsOpenTicksRemaining = DoorsOpenDurationTicks;
+                }
+                return;
 
             case ElevatorState.DoorsOpen:
                 _doorsOpenTicksRemaining--;
                 if (_doorsOpenTicksRemaining <= 0)
                 {
+                    // Passengers exit at this floor
+                    DisembarkPassengers();
+
+                    // Check weight before allowing movement
+                    if (IsOverweight)
+                    {
+                        State = ElevatorState.CapacityExceeded;
+                        return;
+                    }
+
                     if (_stopQueue.Count > 0)
                         AdvanceToNextStop();
                     else
@@ -79,8 +103,17 @@ public class Elevator
         // Check if we've arrived
         if (CurrentFloor == TargetFloor)
         {
-            State = ElevatorState.DoorsOpen;
-            _doorsOpenTicksRemaining = DoorsOpenDurationTicks;
+            if (IsInEmergencyDescent)
+            {
+                // Emergency — freeze at ground floor
+                State = ElevatorState.EmergencyStop;
+                IsInEmergencyDescent = false;
+            }
+            else
+            {
+                State = ElevatorState.DoorsOpen;
+                _doorsOpenTicksRemaining = DoorsOpenDurationTicks;
+            }
         }
     }
 
@@ -109,6 +142,42 @@ public class Elevator
             AdvanceToNextStop();
     }
 
+    /// <summary>
+    /// Forces the elevator into emergency descent to floor 1.
+    /// Clears all passengers and pending stops.
+    /// </summary>
+    public void ForceEmergencyDescent()
+    {
+        _stopQueue.Clear();
+        Passengers.Clear();
+
+        if (CurrentFloor == 1)
+        {
+            State = ElevatorState.EmergencyStop;
+            TargetFloor = 1;
+            IsInEmergencyDescent = false;
+        }
+        else
+        {
+            IsInEmergencyDescent = true;
+            TargetFloor = 1;
+            State = CurrentFloor > 1 ? ElevatorState.MovingDown : ElevatorState.MovingUp;
+        }
+    }
+
+    /// <summary>
+    /// Resets the elevator from emergency mode back to normal idle state.
+    /// </summary>
+    public void ResetFromEmergency()
+    {
+        IsInEmergencyDescent = false;
+        State = ElevatorState.Idle;
+        CurrentFloor = 1;
+        TargetFloor = 1;
+        Passengers.Clear();
+        _stopQueue.Clear();
+    }
+
     private void AdvanceToNextStop()
     {
         if (_stopQueue.TryDequeue(out var next))
@@ -125,5 +194,13 @@ public class Elevator
                 AssignTarget(next);
             }
         }
+    }
+
+    /// <summary>
+    /// Removes passengers whose destination is the current floor.
+    /// </summary>
+    private void DisembarkPassengers()
+    {
+        Passengers.RemoveAll(p => p.DestinationFloor == CurrentFloor);
     }
 }

@@ -9,5 +9,7 @@ public enum ElevatorState
     MovingUp,
     MovingDown,
     DoorsOpen,
-    Maintenance
+    Maintenance,
+    CapacityExceeded,
+    EmergencyStop
 }

@@ -8,6 +8,43 @@
   padding: 2rem;
 }
 
+/* ── Emergency Banner ── */
+
+.emergency-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(90deg, #991b1b, #dc2626, #991b1b);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  animation: banner-flash 1.5s ease-in-out infinite;
+}
+
+.emergency-banner-icon {
+  font-size: 1rem;
+}
+
+@keyframes banner-flash {
+
+  0%,
+  100% {
+    background: linear-gradient(90deg, #991b1b, #dc2626, #991b1b);
+  }
+
+  50% {
+    background: linear-gradient(90deg, #7f1d1d, #b91c1c, #7f1d1d);
+  }
+}
+
 /* ── Header ── */
 
 .app-header {
@@ -58,7 +95,7 @@
 
 .app-main {
   width: 100%;
-  max-width: 900px;
+  max-width: 1000px;
 }
 
 .simulation-layout {
@@ -66,6 +103,15 @@
   gap: 2rem;
   justify-content: center;
   align-items: flex-start;
+}
+
+/* ── Left Panel (Config + Emergency) ── */
+
+.left-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 200px;
 }
 
 /* ── Shafts Container ── */
@@ -106,7 +152,25 @@
   animation: blink 2s ease-in-out infinite;
 }
 
+.live-dot.emergency {
+  background: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+  animation: blink-red 0.8s ease-in-out infinite;
+}
+
 @keyframes blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@keyframes blink-red {
 
   0%,
   100% {
@@ -174,4 +238,88 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── Compliance Log ── */
+
+.compliance-section {
+  margin-top: 2.5rem;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+}
+
+.compliance-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 1rem 0;
+  letter-spacing: 0.04em;
+}
+
+.compliance-table-container {
+  overflow-x: auto;
+}
+
+.compliance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.compliance-table th {
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.65rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.compliance-table td {
+  padding: 0.5rem 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.compliance-table tr.event-capacityexceeded td {
+  color: #f87171;
+}
+
+.compliance-table tr.event-emergencyactivated td,
+.compliance-table tr.event-emergencydeactivated td {
+  color: #fb923c;
+}
+
+.event-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+tr.event-capacityexceeded .event-badge {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+tr.event-emergencyactivated .event-badge {
+  background: rgba(249, 115, 22, 0.15);
+  border-color: rgba(249, 115, 22, 0.3);
+  color: #fb923c;
+}
+
+tr.event-emergencydeactivated .event-badge {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+  color: #4ade80;
 }

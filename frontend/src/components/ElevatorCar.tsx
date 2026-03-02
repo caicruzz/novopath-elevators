@@ -12,14 +12,17 @@ const stateIcons: Record<string, string> = {
     MovingDown: '▼',
     DoorsOpen: '◉',
     Maintenance: '⚠',
+    CapacityExceeded: '⛔',
+    EmergencyStop: '🔥',
 };
 
 export function ElevatorCar({ elevator, numberOfFloors }: Props) {
-    // Position: floor 1 = bottom, floor N = top
-    // Calculate percentage from bottom
     const bottomPercent = ((elevator.currentFloor - 1) / (numberOfFloors - 1)) * 100;
-
     const stateClass = elevator.state.toLowerCase().replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+    const weightPercent = elevator.weightLimitKg > 0
+        ? Math.min((elevator.currentWeightKg / elevator.weightLimitKg) * 100, 100)
+        : 0;
+    const weightLevel = weightPercent > 100 ? 'danger' : weightPercent > 80 ? 'warning' : 'normal';
 
     return (
         <div className="elevator-shaft">
@@ -48,8 +51,18 @@ export function ElevatorCar({ elevator, numberOfFloors }: Props) {
                     <span className="car-floor">{elevator.currentFloor}</span>
                 </div>
             </div>
+
+            {/* Weight capacity bar */}
+            <div className="weight-bar-container">
+                <div className={`weight-bar weight-${weightLevel}`} style={{ width: `${weightPercent}%` }} />
+            </div>
+            <div className="shaft-info">
+                <span className="passenger-count">👤 {elevator.passengerCount}</span>
+                <span className="weight-label">{Math.round(elevator.currentWeightKg)}kg</span>
+            </div>
+
             <div className={`shaft-status state-${stateClass}`}>
-                {elevator.state}
+                {elevator.state === 'CapacityExceeded' ? 'OVERWEIGHT' : elevator.state}
                 {elevator.currentFloor !== elevator.targetFloor && (
                     <span className="target-indicator"> → F{elevator.targetFloor}</span>
                 )}
