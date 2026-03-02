@@ -45,5 +45,30 @@ The project was built in vertical full-stack slices to mitigate risks of unknown
 * **Backend:** Aggregation of simulation data: Average Wait Time, Max Wait Time, Total Trips, and a ledger of Compliance/Safety Events.
 * **Frontend:** The final "Simulation Report" view. When the simulation finishes, the React app renders tables and metrics summarizing the run to fulfill the architect's business requirements.
 
+## Quick Start
+
+### Docker (Recommended)
+
+```bash
+docker compose up --build
+```
+
+Open **http://localhost:3000** — that's it. The frontend serves the React SPA and proxies all `/api` requests to the backend automatically.
+
+### Manual Setup
+
+**Backend** (.NET 10 SDK required):
+```bash
+cd backend && dotnet run
+```
+
+**Frontend** (Node 24+ required):
+```bash
+cd frontend && npm install && npm run dev
+```
+
+Open **http://localhost:5173** (frontend dev server connects to backend on port 5014).
+
 ---
 *Built to reflect a disciplined ability to innovate and excel.*
+

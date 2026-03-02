@@ -1,6 +1,6 @@
 import type { BuildingStateDto, ElevatorDto, ConfigureRequest, SimulationReportDto } from '../types/elevator';
 
-const API_BASE = 'http://localhost:5014';
+const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:5014';
 
 export async function fetchBuildingState(): Promise<BuildingStateDto> {
     const res = await fetch(`${API_BASE}/api/building/state`);
