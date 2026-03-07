@@ -73,6 +73,10 @@ Open **http://localhost:5173** (frontend dev server connects to backend on port 
 
 To transition this application from a robust single-node architecture to a highly scalable, cloud-native enterprise system, two primary enhancements would be introduced. First, replacing the in-memory collections for completed trips and compliance logs with a persistent relational database (e.g., PostgreSQL via Entity Framework Core) would prevent unbounded memory growth and allow for complex historical reporting without impacting application performance. Second, the architecture would decouple the Web API from the background simulation engine using a message broker (such as RabbitMQ or Azure Service Bus). By having the API publish asynchronous events (e.g., ElevatorRequestedEvent) for a separate worker process to consume, the core simulation engine is protected from sudden API traffic spikes, ensuring deterministic processing and true horizontal scalability.
 
+## Frontend Enhancements
+Future frontend optimizations will focus on three key areas: replacing the 400ms REST API polling with WebSockets (SignalR) to drastically reduce network overhead; implementing an atomic state manager like Zustand (or React.memo()) to prevent static components from unnecessarily re-rendering during elevator updates; and hardening UI resilience by introducing React Error Boundaries and Zod schema validation.
+
+
 ---
 *Built to reflect a disciplined ability to innovate and excel.*
 
